@@ -6,11 +6,22 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from preprocessing import preprocess_eeg_file
-from inference_svm import predict_npz   # your SVM inference script
+from .preprocessing import preprocess_eeg_file
+from .inference_svm import predict_npz   # your SVM inference script
 
 #MODIFIED
 from fastapi.staticfiles import StaticFiles
+import os
+import gdown
+
+MODEL_PATH = "Backend/models/svm_model.pkl"
+DRIVE_URL = "https://drive.google.com/uc?id=1WnKvt4DkfhAtLMhvmRShYWzFFDDO1NsV"
+# Download the model if it doesn't exist
+
+if not os.path.exists(MODEL_PATH):
+    print("Downloading SVM model...")
+    gdown.download(DRIVE_URL, MODEL_PATH, quiet=False)
+
 
 BASE_DIR = os.path.dirname(__file__)
 # Allow overriding upload directory via env var for cloud deployment

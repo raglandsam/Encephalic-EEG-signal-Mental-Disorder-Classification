@@ -1,9 +1,14 @@
-venv/
+\venv/
 __pycache__/
+
 *.npz
 *.raw
 *.fif
+
 backend/uploads/
 backend/processed/
+
 backend/models/*.npy
 backend/models/*.npz
+
+Backend/models/svm_model.pkl
