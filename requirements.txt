@@ -1,0 +1,22 @@
+# MODMA EEG Analyzer - Python requirements
+# Install Python dependencies with: pip install -r requirements.txt
+
+# Backend dependencies (compatible with Python 3.10+)
+fastapi==0.121.1
+uvicorn==0.22.0
+python-multipart==0.0.6
+pydantic==2.4.2
+
+# Signal processing and ML
+numpy>=1.24.0
+scipy>=1.10.0
+mne>=1.0.0
+scikit-learn>=1.2.0
+joblib>=1.2.0
+pyriemann>=0.9
+xgboost>=1.7.0
+
+# Optional 
+python-dotenv>=1.0.0
+requests>=2.30.0
+
