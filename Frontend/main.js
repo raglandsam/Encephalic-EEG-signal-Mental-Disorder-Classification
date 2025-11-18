@@ -10,7 +10,7 @@ const statusBadge = document.getElementById('status-badge');
 const uploadArea = document.querySelector('.upload-area');
 
 // HuggingFace backend endpoint (FIXED)
-const API_URL = "https://hysam50epc-encephalic-eeg-distortion-classifier.hf.space/api/full-pipeline";
+const API_URL = "/api/full-pipeline";
 
 // Click upload area → open file picker
 uploadArea.onclick = () => fileInput.click();
