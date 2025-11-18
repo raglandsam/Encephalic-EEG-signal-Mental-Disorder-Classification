@@ -9,9 +9,11 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 BASE_DIR = os.path.dirname(__file__)
-MODEL_DIR = os.path.join(BASE_DIR, "models")
+MODEL_DIR = os.path.join("backend", "models")
+
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
+
 
 os.makedirs(MODEL_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -41,8 +43,8 @@ for fname, url in models_to_download.items():
     else:
         print(f"{fname} already exists")
 
-from .preprocessing import preprocess_eeg_file
-from .inference_svm import predict_npz
+from backend.preprocessing import preprocess_eeg_file
+from backend.inference_svm import predict_npz
 
 @app.post("/full-pipeline")
 async def pipeline(file: UploadFile = File(...), run_infer: bool = True):
