@@ -14,16 +14,24 @@ MODEL_DIR = os.path.join("backend", "models")
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
 
-
 os.makedirs(MODEL_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# -----------------------------
+# INIT APP + CORS
+# -----------------------------
 app = FastAPI(title="MODMA MDD Classifier API")
 
-# Serve static frontend
-app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # HF Spaces needs this
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# HF model URLs
+# -----------------------------
+# DOWNLOAD MODELS AT STARTUP
+# -----------------------------
 models_to_download = {
     "global_tangent_space.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/global_tangent_space.pkl",
     "csp_pipeline.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/csp_pipeline.pkl",
@@ -46,6 +54,10 @@ for fname, url in models_to_download.items():
 from backend.preprocessing import preprocess_eeg_file
 from backend.inference_svm import predict_npz
 
+
+# -----------------------------
+# API ROUTE (PUT THIS BEFORE STATIC MOUNT)
+# -----------------------------
 @app.post("/api/full-pipeline")
 async def pipeline(file: UploadFile = File(...), run_infer: bool = True):
 
@@ -66,6 +78,13 @@ async def pipeline(file: UploadFile = File(...), run_infer: bool = True):
         return result
 
     return {"npz_path": npz_path, "info": info}
+
+
+# -----------------------------
+# SERVE FRONTEND (MOUNT LAST)
+# -----------------------------
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+
 
 if __name__ == "__main__":
     uvicorn.run("backend.app:app", host="0.0.0.0", port=8000)
