@@ -12,14 +12,11 @@ const uploadArea = document.querySelector('.upload-area');
 // HuggingFace backend endpoint (FIXED)
 const API_URL = "/api/full-pipeline";
 
-// Click upload area → open file picker
-uploadArea.onclick = () => fileInput.click();
-
 // Show selected filename
 fileInput.onchange = (e) => {
   const file = e.target.files[0];
   if (file) {
-    uploadArea.style.borderColor = 'var(--accent-color)';
+    uploadArea.style.borderColor = 'var(--accent)';
     const fileLabel = document.getElementById("uploadedFileName");
     if (fileLabel) {
       fileLabel.textContent = `📄 Selected File: ${file.name}`;
