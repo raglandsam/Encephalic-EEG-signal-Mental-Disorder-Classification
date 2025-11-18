@@ -1,2 +1,3 @@
-#!/bin/bash
-uvicorn Backend.app:app --host 0.0.0.0 --port 7860
+chmod +x start.sh
+
+uvicorn app:app --host 0.0.0.0 --port 7860

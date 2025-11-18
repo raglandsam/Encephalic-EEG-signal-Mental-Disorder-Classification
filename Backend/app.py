@@ -47,8 +47,8 @@ print("=================================\n")
 #  AFTER MODELS EXIST, IMPORT INFERENCE MODULE
 # ============================================================
 
-from .preprocessing import preprocess_eeg_file
-from .inference_svm import predict_npz
+from preprocessing import preprocess_eeg_file
+from inference_svm import predict_npz
 
 
 # ============================================================
