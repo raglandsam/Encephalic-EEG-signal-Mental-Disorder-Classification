@@ -3,7 +3,7 @@
 import os
 import shutil
 import uuid
-import gdown
+import requests
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,32 +11,39 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 # ============================================================
-#  MODEL DOWNLOAD BOOTSTRAP (RUNS BEFORE ANY INFERENCE IMPORTS)
+#  MODEL DOWNLOAD BOOTSTRAP (HUGGINGFACE DIRECT LINKS)
 # ============================================================
 
 BASE_DIR = os.path.dirname(__file__)
-
-# Clean MODEL_DIR environment variable if present
-env_model_dir = os.environ.get("MODEL_DIR", "").strip()
-MODEL_DIR = env_model_dir if env_model_dir else os.path.join(BASE_DIR, "models")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
+# HuggingFace dataset model URLs
 models_to_download = {
-    "global_tangent_space.pkl": "https://drive.google.com/uc?id=1_xt2cdcn-mB4hHtRJjytnNwJAIEajrro",
-    "scaler.pkl": "https://drive.google.com/uc?id=15Sd4YZTFicoXH8sM-UJtpOQHqW6ZTUlG",
-    "svm_model.pkl": "https://drive.google.com/uc?id=1WnKvt4DkfhAtLMhvmRShYWzFFDDO1NsV",
-    "csp_pipeline.pkl": "https://drive.google.com/uc?id=1UmZfd7BWpA-WcLKiZ_OM9JZ1-0hatejF",
+    "global_tangent_space.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/global_tangent_space.pkl",
+    "csp_pipeline.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/csp_pipeline.pkl",
+    "scaler.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/scaler.pkl",
+    "svm_model.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/svm_model.pkl",
 }
 
 print(f"\n=== DOWNLOADING MODELS INTO {MODEL_DIR} ===")
-for key, url in models_to_download.items():
-    clean_name = key.strip()        # strip newline if any
-    file_path = os.path.join(MODEL_DIR, clean_name)
+for file_name, url in models_to_download.items():
+    file_path = os.path.join(MODEL_DIR, file_name)
+
     if not os.path.exists(file_path):
-        print(f"🔽 Downloading {clean_name} → {file_path}")
-        gdown.download(url, file_path, quiet=False)
+        print(f"🔽 Downloading {file_name} ...")
+
+        try:
+            r = requests.get(url, timeout=300)
+            r.raise_for_status()
+
+            with open(file_path, "wb") as f:
+                f.write(r.content)
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to download {file_name}: {e}")
     else:
-        print(f"✔ {clean_name} already exists.")
+        print(f"✔ {file_name} already exists.")
 
 print("\n=== FINAL MODEL_DIR CONTENTS ===")
 for f in sorted(os.listdir(MODEL_DIR)):
@@ -44,7 +51,7 @@ for f in sorted(os.listdir(MODEL_DIR)):
 print("=================================\n")
 
 # ============================================================
-#  AFTER MODELS EXIST, IMPORT INFERENCE MODULE
+#  IMPORT INFERENCE LOGIC
 # ============================================================
 
 from preprocessing import preprocess_eeg_file
@@ -56,12 +63,12 @@ from inference_svm import predict_npz
 # ============================================================
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-FRONTEND_DIR = os.path.join(BASE_DIR, "public")
+FRONTEND_DIR = os.path.join(BASE_DIR, "public")   # not used on HF but kept
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(title="MODMA MDD Classifier API")
 
-# CORS
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -71,20 +78,16 @@ app.add_middleware(
 )
 
 # ============================================================
-#  ROUTES
+#  MAIN PIPELINE ROUTE
 # ============================================================
 
 @app.post("/full-pipeline")
 async def full_pipeline(file: UploadFile = File(...), run_infer: bool = True):
 
-    # FILE TYPE CHECK
-    if not (file.filename.lower().endswith(".raw")
-            or file.filename.lower().endswith(".npz")):
-        raise HTTPException(status_code=400,
-            detail=f"Unsupported file type '{file.filename}'. Only .raw or .npz allowed."
-        )
+    if not (file.filename.lower().endswith(".raw") or file.filename.lower().endswith(".npz")):
+        raise HTTPException(400, "Only .raw or .npz files are supported.")
 
-    # SAVE FILE
+    # Save uploaded file
     uid = uuid.uuid4().hex[:8]
     filename = f"{uid}__{file.filename}"
     saved_path = os.path.join(UPLOAD_DIR, filename)
@@ -95,18 +98,18 @@ async def full_pipeline(file: UploadFile = File(...), run_infer: bool = True):
     except Exception as e:
         raise HTTPException(500, f"Failed to save uploaded file: {e}")
 
-    # PREPROCESS
+    # Preprocessing
     try:
-        preproc_out = preprocess_eeg_file(saved_path, output_dir=UPLOAD_DIR)
-        if isinstance(preproc_out, tuple):
-            npz_path, info = preproc_out
+        out = preprocess_eeg_file(saved_path, output_dir=UPLOAD_DIR)
+        if isinstance(out, tuple):
+            npz_path, info = out
         else:
-            npz_path = preproc_out
+            npz_path = out
             info = {}
     except Exception as e:
-        raise HTTPException(500, f"Preprocessing error: {e}")
+        raise HTTPException(500, f"Preprocessing failed: {e}")
 
-    # INFERENCE
+    # Inference
     if run_infer:
         try:
             result = predict_npz(npz_path)
@@ -114,20 +117,13 @@ async def full_pipeline(file: UploadFile = File(...), run_infer: bool = True):
         except Exception as e:
             raise HTTPException(500, f"Inference failed: {e}")
     else:
-        result = {"message": "Preprocessing complete", "npz_path": npz_path, "info": info}
+        result = {"message": "Preprocessing complete", "npz_path": npz_path}
 
     return result
-
-
-# ============================================================
-#  STATIC FRONTEND
-# ============================================================
-
-app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="static")
-
 
 # ============================================================
 #  LOCAL DEV ENTRYPOINT
 # ============================================================
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
