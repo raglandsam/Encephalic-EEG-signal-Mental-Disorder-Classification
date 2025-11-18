@@ -7,7 +7,6 @@ import requests
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 # ============================================================
@@ -15,6 +14,12 @@ import uvicorn
 # ============================================================
 
 BASE_DIR = os.path.dirname(__file__)
+from fastapi.staticfiles import StaticFiles
+
+FRONTEND_DIR = os.path.join(BASE_DIR, "../frontend")
+
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
@@ -63,7 +68,6 @@ from inference_svm import predict_npz
 # ============================================================
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-FRONTEND_DIR = os.path.join(BASE_DIR, "public")   # not used on HF but kept
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(title="MODMA MDD Classifier API")
