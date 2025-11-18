@@ -46,7 +46,7 @@ for fname, url in models_to_download.items():
 from backend.preprocessing import preprocess_eeg_file
 from backend.inference_svm import predict_npz
 
-@app.post("/full-pipeline")
+@app.post("/api/full-pipeline")
 async def pipeline(file: UploadFile = File(...), run_infer: bool = True):
 
     if not (file.filename.endswith(".raw") or file.filename.endswith(".npz")):

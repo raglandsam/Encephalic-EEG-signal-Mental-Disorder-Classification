@@ -9,10 +9,10 @@ const jsonOut = document.getElementById('jsonOut');
 const statusBadge = document.getElementById('status-badge');
 const uploadArea = document.querySelector('.upload-area');
 
-// ⭐ Your HuggingFace backend endpoint
-const API_URL = "https://hysam50epc-encephalic-eeg-distortion-classifier.hf.space/full-pipeline";
+// HuggingFace backend endpoint (FIXED)
+const API_URL = "https://hysam50epc-encephalic-eeg-distortion-classifier.hf.space/api/full-pipeline";
 
-// Click upload area to open file picker
+// Click upload area → open file picker
 uploadArea.onclick = () => fileInput.click();
 
 // Show selected filename
@@ -28,7 +28,7 @@ fileInput.onchange = (e) => {
   }
 };
 
-// Main upload handler
+// Upload handler
 uploadBtn.onclick = async () => {
   const f = fileInput.files[0];
   if (!f) {
@@ -58,7 +58,7 @@ uploadBtn.onclick = async () => {
 
     // ---- Prediction ----
     const label = data.label || "Unknown";
-    const prob = data.prob !== undefined ? data.prob : 0;
+    const prob = data.prob ?? 0;
 
     labelEl.textContent = label;
     probPercent.textContent = Math.round(prob * 100);
@@ -69,6 +69,7 @@ uploadBtn.onclick = async () => {
 
     // ---- Status Badge ----
     statusBadge.classList.remove("mdd", "hc");
+
     if (label === "MDD") {
       statusBadge.textContent = "⚠️ Major Depressive Disorder";
       statusBadge.classList.add("mdd");
@@ -80,10 +81,10 @@ uploadBtn.onclick = async () => {
     // ---- Pretty JSON ----
     jsonOut.textContent = JSON.stringify(data, null, 2);
 
-    // Scroll into view
-    setTimeout(() =>
-      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }),
-    200);
+    // Smooth scroll to result
+    setTimeout(() => {
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 200);
 
   } catch (err) {
     spinner.classList.add('hidden');
@@ -94,6 +95,7 @@ uploadBtn.onclick = async () => {
   }
 };
 
+// Reset UI
 function resetForm() {
   fileInput.value = '';
   resultBox.classList.add('hidden');
