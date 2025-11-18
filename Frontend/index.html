@@ -1,88 +1,88 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MODMA EEG Analyzer - Mental Health Classification System</title>
-  <!-- small brain emoji favicon as inline SVG data URL (fixed to brain emoji) -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Encephalic Signal Distortion Classifier</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50%25' x='50%25' dominant-baseline='middle' text-anchor='middle' font-size='69'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="main.css" />
 </head>
-
 <body>
-  <div class="background-animation"></div>
-  
-  <div class="container">
-    <div class="header-section">
-      <img src="assets/brain.png" class="logo-img" alt="Brain Icon" />
-      <h1>Encephalic Signal Distortion Classifier</h1>
-      <p class="subtitle">Mental Health Classification System</p>
-      <p class="tagline">Powered by AI-Driven EEG Signal Processing</p>
-    </div>
+  <div class="bg-overlay"></div>
+  <div class="glow-spot spot-left"></div>
+  <div class="glow-spot spot-right"></div>
 
-    <div class="disclaimer" role="note" aria-live="polite">
-      <strong>Important — Advisory</strong>
-      <p>The classification provided by this system is for research and informational use only. It is not a medical diagnosis and may be incorrect. Do not use this result as a substitute for professional clinical assessment.</p>
-    </div>
-
-    <div class="upload-section">
-      <div class="upload-area">
-        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="17 8 12 3 7 8"></polyline>
-          <line x1="12" y1="3" x2="12" y2="15"></line>
-        </svg>
-        <p class="upload-text">Select your EEG file</p>
-        <p class="upload-hint">Supports .raw, .npz formats</p>
-        <input id="fileInput" type="file" accept=".raw,.npz" class="file-input">
-      </div>
-
-      <button id="uploadBtn" class="btn-primary">
-        <span class="btn-text">Analyze EEG signals</span>
-        <span class="btn-icon">→</span>
-      </button>
-      <p id="uploadedFileName" style="margin-top:10px;font-size:0.9rem;color:#0af;opacity:0;transition:0.3s;"></p>
-
-    </div>
-
-    <div class="spinner hidden" id="spinner">
-      <div class="spinner-ring"></div>
-      <p class="loading-text">Processing EEG Signals...</p>
-    </div>
-
-    <div id="result" class="result-box hidden">
-      <div class="result-header">
-        <h2>Classification Result</h2>
-        <span class="result-status" id="status-badge"></span>
-      </div>
-      
-      <div class="result-main">
-        <div class="prediction-card">
-          <p class="label-title">Diagnosis</p>
-          <div id="label" class="prediction-value"></div>
+  <main class="frame">
+    <header class="top">
+      <div class="brand">
+        <img src="assets/brain.png" alt="brain" class="logo" />
+        <div class="brand-texts">
+          <h1>Encephalic Signal Distortion</h1>
+          <p class="muted">EEG → Feature Pipeline → Classification</p>
         </div>
-        
-        <div class="confidence-card">
-          <p class="label-title">Confidence Level</p>
-          <div class="confidence-bar-container">
-            <div id="probFill" class="confidence-bar"></div>
+      </div>
+      <p class="tag">Research • Not a medical diagnosis</p>
+    </header>
+
+    <section class="panel upload-panel">
+      <div class="upload-left">
+        <div class="upload-area" title="Click to select a file">
+          <svg class="upl-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+          <div class="upload-text">Drop or click to select EEG file</div>
+          <div class="upload-hint">Supported: <strong>.raw</strong>, <strong>.npz</strong></div>
+          <input id="fileInput" type="file" accept=".raw,.npz" class="file-input" />
+        </div>
+
+        <div class="controls">
+          <button id="uploadBtn" class="btn primary">
+            <span>Analyze EEG signals</span>
+            <span class="arrow">➜</span>
+          </button>
+          <div id="uploadedFileName" class="file-name">No file selected</div>
+        </div>
+      </div>
+
+      <div class="upload-right">
+        <div id="spinner" class="spinner hidden">
+          <div class="spinner-ring"></div>
+          <div class="loading">Processing EEG — this may take a minute</div>
+        </div>
+
+        <div id="result" class="result hidden">
+          <div class="result-head">
+            <h2>Classification</h2>
+            <div id="status-badge" class="status"></div>
           </div>
-          <p class="confidence-text"><span id="probPercent">0</span>%</p>
+
+          <div class="result-grid">
+            <div class="card pred">
+              <div class="small">Diagnosis</div>
+              <div id="label" class="big">—</div>
+            </div>
+
+            <div class="card conf">
+              <div class="small">Confidence</div>
+              <div class="bar-wrap">
+                <div class="bar-bg"><div id="probFill" class="bar-fill"></div></div>
+                <div class="pct"><span id="probPercent">0</span>%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="details">
+            <h3>Analysis JSON</h3>
+            <pre id="jsonOut" class="json"></pre>
+          </div>
+
+          <button class="btn ghost" onclick="resetForm()">← Analyze another</button>
         </div>
       </div>
+    </section>
 
-      <div class="result-details">
-        <h3>Analysis Details</h3>
-        <pre id="jsonOut"></pre>
-      </div>
-
-      <button class="btn-secondary" onclick="resetForm()">← Analyze Another File</button>
-    </div>
-
-    <footer class="footer">
-      <p>Advanced Mental Health Classification</p>
+    <footer class="foot muted">
+      Built for research • Handle results responsibly
     </footer>
-  </div>
+  </main>
 
   <script src="main.js"></script>
 </body>

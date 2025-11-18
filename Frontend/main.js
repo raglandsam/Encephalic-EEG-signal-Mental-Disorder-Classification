@@ -9,16 +9,17 @@ const jsonOut = document.getElementById('jsonOut');
 const statusBadge = document.getElementById('status-badge');
 const uploadArea = document.querySelector('.upload-area');
 
-// Click upload area to select file
+// ⭐ Your HuggingFace backend endpoint
+const API_URL = "https://hysam50epc-encephalic-eeg-distortion-classifier.hf.space/full-pipeline";
+
+// Click upload area to open file picker
 uploadArea.onclick = () => fileInput.click();
 
-// File input change handler
+// Show selected filename
 fileInput.onchange = (e) => {
   const file = e.target.files[0];
   if (file) {
     uploadArea.style.borderColor = 'var(--accent-color)';
-    
-    // SHOW FILE NAME
     const fileLabel = document.getElementById("uploadedFileName");
     if (fileLabel) {
       fileLabel.textContent = `📄 Selected File: ${file.name}`;
@@ -27,12 +28,12 @@ fileInput.onchange = (e) => {
   }
 };
 
-
+// Main upload handler
 uploadBtn.onclick = async () => {
   const f = fileInput.files[0];
-  if (!f) { 
-    alert('📁 Please select an EEG file to analyze');
-    return; 
+  if (!f) {
+    alert('📁 Please select an EEG file first!');
+    return;
   }
 
   spinner.classList.remove('hidden');
@@ -44,40 +45,46 @@ uploadBtn.onclick = async () => {
   form.append('file', f);
 
   try {
-    const resp = await fetch('/full-pipeline', { method: 'POST', body: form, timeout: 180000 });
-    const data = await resp.json();
-    spinner.classList.add('hidden');
+    const resp = await fetch(API_URL, { method: 'POST', body: form });
 
-    if (data.error) {
-      alert('⚠️ Error: ' + (data.error || 'Processing failed'));
-      return;
+    if (!resp.ok) {
+      throw new Error(`Server returned ${resp.status}`);
     }
 
+    const data = await resp.json();
+
+    spinner.classList.add('hidden');
     resultBox.classList.remove('hidden');
-    
-    // Parse prediction
-    const prediction = data.label || data.prediction || 'Unknown';
-    const probability = data.prob !== undefined ? data.prob : data.probability || 0;
-    
-    labelEl.textContent = prediction;
-    probPercent.textContent = Math.round(probability * 100);
-    
-    // Animate probability bar
+
+    // ---- Prediction ----
+    const label = data.label || "Unknown";
+    const prob = data.prob !== undefined ? data.prob : 0;
+
+    labelEl.textContent = label;
+    probPercent.textContent = Math.round(prob * 100);
+
     setTimeout(() => {
-      probFill.style.width = `${(probability * 100)}%`;
+      probFill.style.width = `${prob * 100}%`;
     }, 100);
 
-    // Set status badge
-    statusBadge.textContent = prediction === 'MDD' ? '⚠️ Major Depressive Disorder' : '✓ Healthy Control';
-    statusBadge.classList.add(prediction.toLowerCase());
+    // ---- Status Badge ----
+    statusBadge.classList.remove("mdd", "hc");
+    if (label === "MDD") {
+      statusBadge.textContent = "⚠️ Major Depressive Disorder";
+      statusBadge.classList.add("mdd");
+    } else {
+      statusBadge.textContent = "✓ Healthy Control";
+      statusBadge.classList.add("hc");
+    }
 
-    // Format JSON nicely
+    // ---- Pretty JSON ----
     jsonOut.textContent = JSON.stringify(data, null, 2);
-    
-    // Scroll to results
-    setTimeout(() => {
-      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 300);
+
+    // Scroll into view
+    setTimeout(() =>
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }),
+    200);
+
   } catch (err) {
     spinner.classList.add('hidden');
     alert('❌ Upload failed: ' + err.message);
