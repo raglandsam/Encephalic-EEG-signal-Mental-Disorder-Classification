@@ -6,7 +6,7 @@ from collections import Counter
 from mne.filter import filter_data
 from pyriemann.estimation import Covariances
 from scipy.stats import skew, kurtosis
-import xgboost as xgb  # optional if you want xgb path too
+ # optional if you want xgb path too
 
 # ----- CONFIG: point these to your model files in backend/models/
 BASE_DIR = os.path.dirname(__file__)
