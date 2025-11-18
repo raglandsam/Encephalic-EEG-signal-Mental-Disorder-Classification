@@ -1,5 +1,3 @@
-# backend/app.py
-
 import os
 import shutil
 import uuid
@@ -7,23 +5,23 @@ import requests
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-# ============================================================
-#  MODEL DOWNLOAD BOOTSTRAP (HUGGINGFACE DIRECT LINKS)
-# ============================================================
-
 BASE_DIR = os.path.dirname(__file__)
-from fastapi.staticfiles import StaticFiles
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
 
-FRONTEND_DIR = os.path.join(BASE_DIR, "../frontend")
+os.makedirs(MODEL_DIR, exist_ok=True)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+app = FastAPI(title="MODMA MDD Classifier API")
+
+# Serve static frontend
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
-MODEL_DIR = os.path.join(BASE_DIR, "models")
-os.makedirs(MODEL_DIR, exist_ok=True)
-
-# HuggingFace dataset model URLs
+# HF model URLs
 models_to_download = {
     "global_tangent_space.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/global_tangent_space.pkl",
     "csp_pipeline.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/csp_pipeline.pkl",
@@ -31,103 +29,41 @@ models_to_download = {
     "svm_model.pkl": "https://huggingface.co/datasets/hysam50epc/raglandsam-EEG_models/resolve/main/svm_model.pkl",
 }
 
-print(f"\n=== DOWNLOADING MODELS INTO {MODEL_DIR} ===")
-for file_name, url in models_to_download.items():
-    file_path = os.path.join(MODEL_DIR, file_name)
-
-    if not os.path.exists(file_path):
-        print(f"🔽 Downloading {file_name} ...")
-
-        try:
-            r = requests.get(url, timeout=300)
-            r.raise_for_status()
-
-            with open(file_path, "wb") as f:
-                f.write(r.content)
-
-        except Exception as e:
-            raise RuntimeError(f"Failed to download {file_name}: {e}")
+print(f"=== DOWNLOADING MODELS INTO {MODEL_DIR} ===")
+for fname, url in models_to_download.items():
+    path = os.path.join(MODEL_DIR, fname)
+    if not os.path.exists(path):
+        r = requests.get(url)
+        r.raise_for_status()
+        with open(path, "wb") as f:
+            f.write(r.content)
+        print(f"Downloaded {fname}")
     else:
-        print(f"✔ {file_name} already exists.")
+        print(f"{fname} already exists")
 
-print("\n=== FINAL MODEL_DIR CONTENTS ===")
-for f in sorted(os.listdir(MODEL_DIR)):
-    print(" -", repr(f))
-print("=================================\n")
-
-# ============================================================
-#  IMPORT INFERENCE LOGIC
-# ============================================================
-
-from preprocessing import preprocess_eeg_file
-from inference_svm import predict_npz
-
-
-# ============================================================
-#  FASTAPI APP
-# ============================================================
-
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-app = FastAPI(title="MODMA MDD Classifier API")
-
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ============================================================
-#  MAIN PIPELINE ROUTE
-# ============================================================
+from .preprocessing import preprocess_eeg_file
+from .inference_svm import predict_npz
 
 @app.post("/full-pipeline")
-async def full_pipeline(file: UploadFile = File(...), run_infer: bool = True):
+async def pipeline(file: UploadFile = File(...), run_infer: bool = True):
 
-    if not (file.filename.lower().endswith(".raw") or file.filename.lower().endswith(".npz")):
-        raise HTTPException(400, "Only .raw or .npz files are supported.")
+    if not (file.filename.endswith(".raw") or file.filename.endswith(".npz")):
+        raise HTTPException(400, "Upload .raw or .npz only")
 
-    # Save uploaded file
     uid = uuid.uuid4().hex[:8]
-    filename = f"{uid}__{file.filename}"
-    saved_path = os.path.join(UPLOAD_DIR, filename)
+    save_path = os.path.join(UPLOAD_DIR, f"{uid}__{file.filename}")
 
-    try:
-        with open(saved_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
-    except Exception as e:
-        raise HTTPException(500, f"Failed to save uploaded file: {e}")
+    with open(save_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
 
-    # Preprocessing
-    try:
-        out = preprocess_eeg_file(saved_path, output_dir=UPLOAD_DIR)
-        if isinstance(out, tuple):
-            npz_path, info = out
-        else:
-            npz_path = out
-            info = {}
-    except Exception as e:
-        raise HTTPException(500, f"Preprocessing failed: {e}")
+    npz_path, info = preprocess_eeg_file(save_path)
 
-    # Inference
     if run_infer:
-        try:
-            result = predict_npz(npz_path)
-            result["preprocess_info"] = info
-        except Exception as e:
-            raise HTTPException(500, f"Inference failed: {e}")
-    else:
-        result = {"message": "Preprocessing complete", "npz_path": npz_path}
+        result = predict_npz(npz_path)
+        result["preprocess_info"] = info
+        return result
 
-    return result
-
-# ============================================================
-#  LOCAL DEV ENTRYPOINT
-# ============================================================
+    return {"npz_path": npz_path, "info": info}
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.app:app", host="0.0.0.0", port=8000)
