@@ -19,13 +19,6 @@ models_to_download = {
     "csp_pipeline.pkl": "https://drive.google.com/uc?id=1UmZfd7BWpA-WcLKiZ_OM9JZ1-0hatejF",
 }
 
-from .preprocessing import preprocess_eeg_file
-from .inference_svm import predict_npz   # your SVM inference script
-
-#MODIFIED
-from fastapi.staticfiles import StaticFiles
-
-
 # Download missing model files at startup
 for filename, url in models_to_download.items():
     path = os.path.join(MODEL_DIR, filename)
@@ -34,6 +27,12 @@ for filename, url in models_to_download.items():
         gdown.download(url, path, quiet=False)
     else:
         print(f"✔ {filename} already exists.")
+
+from .preprocessing import preprocess_eeg_file
+from .inference_svm import predict_npz   # your SVM inference script
+
+#MODIFIED
+from fastapi.staticfiles import StaticFiles
 
 BASE_DIR = os.path.dirname(__file__)
 # Allow overriding upload directory via env var for cloud deployment
