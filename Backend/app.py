@@ -5,12 +5,6 @@ import uuid
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-
-from .preprocessing import preprocess_eeg_file
-from .inference_svm import predict_npz   # your SVM inference script
-
-#MODIFIED
-from fastapi.staticfiles import StaticFiles
 import gdown
 import os
 
@@ -24,6 +18,13 @@ models_to_download = {
     "svm_model.pkl": "https://drive.google.com/uc?id=1WnKvt4DkfhAtLMhvmRShYWzFFDDO1NsV",
     "csp_pipeline.pkl": "https://drive.google.com/uc?id=1UmZfd7BWpA-WcLKiZ_OM9JZ1-0hatejF",
 }
+
+from .preprocessing import preprocess_eeg_file
+from .inference_svm import predict_npz   # your SVM inference script
+
+#MODIFIED
+from fastapi.staticfiles import StaticFiles
+
 
 # Download missing model files at startup
 for filename, url in models_to_download.items():
