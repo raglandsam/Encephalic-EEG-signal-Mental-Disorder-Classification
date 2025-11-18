@@ -1,3 +1,13 @@
+---
+title: Encephalic EEG Distortion Classifier
+emoji: 🧠
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+sdk_version: "1.0" 
+app_file: app.py
+pinned: false
+---
 # Encephalic EEG Analyzer
 
 AI-powered mental health classification system using EEG signals. Classifies Major Depressive Disorder (MDD) vs. Healthy Control (HC). The model is developed using the MODMA dataset.
