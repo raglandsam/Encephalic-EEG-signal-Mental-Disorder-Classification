@@ -11,17 +11,28 @@ from .inference_svm import predict_npz   # your SVM inference script
 
 #MODIFIED
 from fastapi.staticfiles import StaticFiles
-import os
 import gdown
+import os
 
-MODEL_PATH = "Backend/models/svm_model.pkl"
-DRIVE_URL = "https://drive.google.com/uc?id=1WnKvt4DkfhAtLMhvmRShYWzFFDDO1NsV"
-# Download the model if it doesn't exist
+BASE_DIR = os.path.dirname(__file__)
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
-if not os.path.exists(MODEL_PATH):
-    print("Downloading SVM model...")
-    gdown.download(DRIVE_URL, MODEL_PATH, quiet=False)
+models_to_download = {
+    "global_tangent_space.pkl": "https://drive.google.com/uc?id=1_xt2cdcn-mB4hHtRJjytnNwJAIEajrro",
+    "scaler.pkl": "https://drive.google.com/uc?id=15Sd4YZTFicoXH8sM-UJtpOQHqW6ZTUlG",
+    "svm_model.pkl": "https://drive.google.com/uc?id=1WnKvt4DkfhAtLMhvmRShYWzFFDDO1NsV",
+    "csp_pipeline.pkl": "https://drive.google.com/uc?id=1UmZfd7BWpA-WcLKiZ_OM9JZ1-0hatejF",
+}
 
+# Download missing model files at startup
+for filename, url in models_to_download.items():
+    path = os.path.join(MODEL_DIR, filename)
+    if not os.path.exists(path):
+        print(f"🔽 Downloading {filename} ...")
+        gdown.download(url, path, quiet=False)
+    else:
+        print(f"✔ {filename} already exists.")
 
 BASE_DIR = os.path.dirname(__file__)
 # Allow overriding upload directory via env var for cloud deployment
