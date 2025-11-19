@@ -1,4 +1,5 @@
 const fileInput = document.getElementById('fileInput');
+const uploadArea = document.getElementById('uploadArea');
 const uploadBtn = document.getElementById('uploadBtn');
 const spinner = document.getElementById('spinner');
 const resultBox = document.getElementById('result');
@@ -7,31 +8,24 @@ const probFill = document.getElementById('probFill');
 const probPercent = document.getElementById('probPercent');
 const jsonOut = document.getElementById('jsonOut');
 const statusBadge = document.getElementById('status-badge');
-const uploadArea = document.querySelector('.upload-area');
 
-// HuggingFace backend endpoint (FIXED)
 const API_URL = "/api/full-pipeline";
 
-// Show selected filename
-fileInput.onchange = (e) => {
+uploadArea.addEventListener("click", () => {
+  fileInput.click();    // bulletproof single trigger
+});
+
+fileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (file) {
-    uploadArea.style.borderColor = 'var(--accent)';
-    const fileLabel = document.getElementById("uploadedFileName");
-    if (fileLabel) {
-      fileLabel.textContent = `📄 Selected File: ${file.name}`;
-      fileLabel.style.opacity = 1;
-    }
+    document.getElementById("uploadedFileName").textContent =
+      `📄 Selected File: ${file.name}`;
   }
-};
+});
 
-// Upload handler
 uploadBtn.onclick = async () => {
   const f = fileInput.files[0];
-  if (!f) {
-    alert('📁 Please select an EEG file first!');
-    return;
-  }
+  if (!f) { alert("📁 Please select an EEG file first!"); return; }
 
   spinner.classList.remove('hidden');
   resultBox.classList.add('hidden');
@@ -43,30 +37,22 @@ uploadBtn.onclick = async () => {
 
   try {
     const resp = await fetch(API_URL, { method: 'POST', body: form });
-
-    if (!resp.ok) {
-      throw new Error(`Server returned ${resp.status}`);
-    }
+    if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
 
     const data = await resp.json();
 
     spinner.classList.add('hidden');
     resultBox.classList.remove('hidden');
 
-    // ---- Prediction ----
-    const label = data.label || "Unknown";
+    const label = data.label ?? "Unknown";
     const prob = data.prob ?? 0;
 
     labelEl.textContent = label;
     probPercent.textContent = Math.round(prob * 100);
 
-    setTimeout(() => {
-      probFill.style.width = `${prob * 100}%`;
-    }, 100);
+    setTimeout(() => { probFill.style.width = `${prob * 100}%`; }, 50);
 
-    // ---- Status Badge ----
-    statusBadge.classList.remove("mdd", "hc");
-
+    statusBadge.className = "status";
     if (label === "MDD") {
       statusBadge.textContent = "⚠️ Major Depressive Disorder";
       statusBadge.classList.add("mdd");
@@ -75,29 +61,21 @@ uploadBtn.onclick = async () => {
       statusBadge.classList.add("hc");
     }
 
-    // ---- Pretty JSON ----
     jsonOut.textContent = JSON.stringify(data, null, 2);
-
-    // Smooth scroll to result
-    setTimeout(() => {
-      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 200);
 
   } catch (err) {
     spinner.classList.add('hidden');
-    alert('❌ Upload failed: ' + err.message);
+    alert("❌ Upload failed: " + err.message);
   } finally {
     uploadBtn.disabled = false;
-    uploadBtn.style.opacity = '1';
+    uploadBtn.style.opacity = "1";
   }
 };
 
-// Reset UI
 function resetForm() {
-  fileInput.value = '';
-  resultBox.classList.add('hidden');
-  uploadArea.style.borderColor = '';
-  probFill.style.width = '0%';
-  probPercent.textContent = '0';
-  statusBadge.classList.remove('mdd', 'hc');
+  fileInput.value = "";
+  resultBox.classList.add("hidden");
+  document.getElementById("uploadedFileName").textContent = "No file selected";
+  probFill.style.width = "0%";
+  statusBadge.className = "status";
 }

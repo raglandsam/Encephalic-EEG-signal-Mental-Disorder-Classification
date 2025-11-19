@@ -30,22 +30,19 @@
 
       <div class="upload-left">
 
-        <!-- FIXED UPLOAD AREA -->
-        <div class="upload-area" title="Click to select a file">
-
-          <!-- INPUT MUST BE FIRST CHILD -->
-          <input id="fileInput" type="file" accept=".raw,.npz" class="file-input" />
-
+        <!-- FINAL v9 UPLOAD AREA (bulletproof) -->
+        <div class="upload-area" id="uploadArea">
           <svg class="upl-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-
           <div class="upload-text">Drop or click to select EEG file</div>
           <div class="upload-hint">Supported: <strong>.raw</strong>, <strong>.npz</strong></div>
-
         </div>
+
+        <!-- Hidden input OUTSIDE clickable box -->
+        <input id="fileInput" type="file" accept=".raw,.npz" class="real-file-input" />
 
         <div class="controls">
           <button id="uploadBtn" class="btn primary">
