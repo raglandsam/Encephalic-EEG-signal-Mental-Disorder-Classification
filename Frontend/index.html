@@ -96,5 +96,17 @@
   </main>
 
   <script src="main.js"></script>
+  <script>
+    window.onload = () => {
+      // 1. KILL GRADIO WRAPPER (it causes the double click)
+      const wrappers = document.querySelectorAll("gradio-app, .gradio-container, #root");
+      wrappers.forEach(w => {
+      w.style.pointerEvents = "none";});
+
+  // 2. RE-ENABLE pointer events ONLY for your own UI
+      document.body.style.pointerEvents = "auto";
+    };
+</script>
+
 </body>
 </html>
